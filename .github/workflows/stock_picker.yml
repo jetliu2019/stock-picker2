@@ -1,4 +1,4 @@
-name: Stock Picker Daily
+name: Stock Picker Daily2
 
 on:
   # 定时触发（cron使用UTC时间）
@@ -15,7 +15,7 @@ jobs:
   stock-picking:
     runs-on: ubuntu-latest
     # 设置超时时间，避免卡住浪费额度
-    timeout-minutes: 15
+    timeout-minutes: 120
     
     steps:
       - name: 📥 检出代码
