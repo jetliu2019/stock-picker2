@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import requests
 import warnings
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 warnings.filterwarnings('ignore')
@@ -407,32 +409,34 @@ def screen_single_stock(df, index_df, capital):
 
 
 def batch_screen(stock_list, fetch_stock_func, fetch_index_func, fetch_capital_func,
-                 signal_filter=None):
+                 signal_filter=None, max_workers=10):
     index_df = fetch_index_func()
     results = []
     total = len(stock_list)
+    progress_lock = threading.Lock()
+    progress_counter = [0]  # 用列表以便在闭包中修改
 
-    for idx, code in enumerate(stock_list):
-        print(f"\r[{idx + 1}/{total}] 正在分析 {code} ...", end='', flush=True)
+    def _process_one(code):
+        """单只股票的 获取数据 + 分析 逻辑（在子线程中执行）"""
         try:
             df = fetch_stock_func(code)
             if df is None or len(df) < 120:
-                continue
+                return None
             cap = fetch_capital_func(code)
             common = df.index.intersection(index_df.index)
             if len(common) < 120:
-                continue
+                return None
             df_a = df.loc[common].copy()
             idx_a = index_df.loc[common].copy()
             res = screen_single_stock(df_a, idx_a, cap)
             all_signals = res['买入信号'] + res['卖出信号']
             if not all_signals:
-                continue
+                return None
             if signal_filter:
                 if not any(s in all_signals for s in signal_filter):
-                    continue
+                    return None
             date_str = pd.Timestamp(res['日期']).strftime('%Y-%m-%d')
-            results.append({
+            return {
                 '代码': code,
                 '日期': date_str,
                 '开盘价': res['开盘价'],
@@ -445,9 +449,23 @@ def batch_screen(stock_list, fetch_stock_func, fetch_index_func, fetch_capital_f
                 '空线': res['空线'],
                 '多头趋势': '是' if res['多头趋势'] else '否',
                 '中线趋势': res['中线趋势'],
-            })
-        except Exception as e:
-            continue
+            }
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_code = {executor.submit(_process_one, code): code for code in stock_list}
+        for future in as_completed(future_to_code):
+            code = future_to_code[future]
+            with progress_lock:
+                progress_counter[0] += 1
+                print(f"\r[{progress_counter[0]}/{total}] 已完成 {code} ...", end='', flush=True)
+            try:
+                result = future.result()
+                if result is not None:
+                    results.append(result)
+            except Exception:
+                continue
 
     print(f"\n选股完成, 共发现 {len(results)} 只符合条件的股票")
     return pd.DataFrame(results)
@@ -1030,6 +1048,7 @@ if __name__ == '__main__':
         '301337', '301338', '301339', '301345', '301348', '301349', '301353', '301355', '301356', '301357', '301358',
         '301359', '301360', '301361', '301362', '301363', '301365', '301366', '301367', '301368', '301369', '301370',
         '301371', '301372', '301373', '301376', '301377', '301378', '301379', '301380', '301381', '301382', '301383'
+
     ]
 
     result_df = batch_screen(
@@ -1055,8 +1074,6 @@ if __name__ == '__main__':
     print("  📱 正在通过 PushPlus 推送结果到手机...")
     print("=" * 60)
 
-    title = f"📊 上涨确立选股报告二 {datetime.now().strftime('%m-%d %H:%M')}"
+    title = f"📊 上涨确立选股报告 {datetime.now().strftime('%m-%d %H:%M')}"
     full_html = '\n'.join(all_html_parts)
     send_pushplus(title, full_html)
-
-
