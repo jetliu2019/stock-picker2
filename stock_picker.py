@@ -1074,6 +1074,7 @@ if __name__ == '__main__':
     print("  📱 正在通过 PushPlus 推送结果到手机...")
     print("=" * 60)
 
-    title = f"📊 上涨确立选股报告 {datetime.now().strftime('%m-%d %H:%M')}"
+    title = f"📊 上涨确立选股报告二 {datetime.now().strftime('%m-%d %H:%M')}"
     full_html = '\n'.join(all_html_parts)
     send_pushplus(title, full_html)
+
