@@ -769,28 +769,28 @@ if __name__ == '__main__':
     all_html_parts = []
 
     # ==================== 单只股票分析 ====================
-    print("\n" + "=" * 60)
-    print("  示例1: 分析单只股票 000001(平安银行)")
-    print("=" * 60)
-    try:
-        stock_df = fetch_stock('000001')
-        index_df = fetch_index()
-        cap = fetch_capital('000001')
+    #print("\n" + "=" * 60)
+    #print("  示例1: 分析单只股票 000001(平安银行)")
+    #print("=" * 60)
+    #try:
+    #    stock_df = fetch_stock('000001')
+    #    index_df = fetch_index()
+    #    cap = fetch_capital('000001')
 
-        common_dates = stock_df.index.intersection(index_df.index)
-        stock_aligned = stock_df.loc[common_dates]
-        index_aligned = index_df.loc[common_dates]
+    #    common_dates = stock_df.index.intersection(index_df.index)
+    #    stock_aligned = stock_df.loc[common_dates]
+    #    index_aligned = index_df.loc[common_dates]
 
-        result = screen_single_stock(stock_aligned, index_aligned, cap)
+    #    result = screen_single_stock(stock_aligned, index_aligned, cap)
 
-        print_single_result('000001', result)
+    #    print_single_result('000001', result)
 
-        all_html_parts.append('<h2>📈 单股分析: 000001 平安银行</h2>')
-        all_html_parts.append(format_single_result_html('000001', result))
+    #    all_html_parts.append('<h2>📈 单股分析: 000001 平安银行</h2>')
+    #    all_html_parts.append(format_single_result_html('000001', result))
 
-    except Exception as e:
-        print(f"分析出错: {e}")
-        all_html_parts.append(f'<p style="color:red;">单股分析出错: {e}</p>')
+    #except Exception as e:
+    #    print(f"分析出错: {e}")
+    #    all_html_parts.append(f'<p style="color:red;">单股分析出错: {e}</p>')
 
     # ==================== 批量选股 ====================
     print("\n" + "=" * 60)
